@@ -20,17 +20,66 @@ To read more about using these font, please visit the Next.js documentation:
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export function Component() {
+  const [link, setLink] = useState("");
+  const [cards, setCart] = useState([]);
+  const submit_hander = async (e) => {
+    e.preventDefault();
+    let video_link = e.target.elements.name.value;
+    setLink(video_link);
+    const url = `http://127.0.0.1:8000/get_formated/${video_link}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    console.log(data);
+    setCart(data);
+  };
+  const download_video = async (itag, filename) => {
+    const url = "http://127.0.0.1:8000/download_video";
+    const res = await fetch(url, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/octet-stream",
+      },
+      body: JSON.stringify({
+        url: link,
+        itag: itag,
+      }),
+    });
+    const blob = await res.blob();
+
+    // Use the blob to create a link and simulate a click to download
+    const download_url = window.URL.createObjectURL(blob);
+    const download_link = document.createElement("a");
+    download_link.href = download_url;
+    download_link.download = filename || "video.mp3"; // or any other extension
+    document.body.appendChild(download_link);
+    download_link.click();
+    document.body.removeChild(download_link);
+  };
+
   return (
-    <form className="w-full max-w-md space-y-4 bg-white">
-      <div className="space-y-2">
-        <Label htmlFor="name">Enter Youtube Link</Label>
-        <Input id="name" placeholder="Enter your name" />
-      </div>
-      <Button type="submit" className="w-full">
-        Submit
-      </Button>
-    </form>
+    <>
+      <form
+        className="w-full max-w-md space-y-4 bg-white"
+        onSubmit={submit_hander}
+      >
+        <div className="space-y-2">
+          <Label htmlFor="name">Enter Youtube Link</Label>
+          <Input id="name" placeholder="Enter Youtube Video Link" />
+        </div>
+        <Button type="submit" className="w-full bg-grey">
+          Submit
+        </Button>
+      </form>
+      {cards.map((d, i) => (
+        <p key={i} onClick={() => download_video(d.key, d.file_name)}>
+          {d.resolution} - {d.type} -
+          {d.is_progressive ? "full" : "only video or audio"}
+        </p>
+      ))}
+    </>
   );
 }

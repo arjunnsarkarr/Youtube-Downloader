@@ -13,11 +13,17 @@ async def get_available_streams(url) -> List[Dict | None]:
     res_list = []
     for i, stream in enumerate(streams):
         res = {}
-        res["key"] = stream.itag
+        res["key"] = str(stream.itag)
         res["type"] = stream.type
         res["resolution"] = stream.resolution
         res["is_progressive"] = stream.is_progressive
         res["size"] = stream._filesize_mb
+        if stream.type == "audio":
+            file_name = stream.default_filename.split(".")[0]
+            file_name = f"{file_name}.mp3"
+            res["file_name"] = file_name
+        else:
+            res["file_name"] = stream.default_filename
         res_list.append(res)
     return res_list
 
