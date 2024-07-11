@@ -7,9 +7,15 @@ VIDEO_PATH = Path(".").absolute() / "videos"
 VIDEO_PATH.mkdir(exist_ok=True)
 
 
-async def get_available_streams(url) -> List[Dict | None]:
+async def get_available_streams(url) -> Dict:
     yt = YouTube(url)
     streams: List = yt.streams.filter(file_extension="mp4")
+    video_length = yt.length
+    response = {}
+    response["meta"] = {
+        "thumbnail": yt.thumbnail_url,
+        "duration": f"{video_length // 60}:{video_length % 60}",
+    }
     res_list = []
     for i, stream in enumerate(streams):
         res = {}
@@ -25,7 +31,8 @@ async def get_available_streams(url) -> List[Dict | None]:
         else:
             res["file_name"] = stream.default_filename
         res_list.append(res)
-    return res_list
+    response["data"] = res_list
+    return response
 
 
 async def download_video(url, itag):
