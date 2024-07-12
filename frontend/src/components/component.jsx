@@ -1,29 +1,48 @@
 import { useState } from "react";
 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export function Component() {
+  const server_url = process.env.NEXT_PUBLIC_SERVER_URL;
   const [link, setLink] = useState("");
   const [cards, setCart] = useState([]);
   const [erro, setError] = useState("");
+  const [Thumbnail, setThumbnail] = useState("");
+  const [duration, setDuration] = useState("");
 
   const submit_hander = async (e) => {
     e.preventDefault();
     try {
       let video_link = e.target.elements.name.value;
       setLink(video_link);
-      const url = `http://127.0.0.1:8000/get_formated/${video_link}`;
+      const url = `${server_url}/get_formated/${video_link}`;
+
       const res = await fetch(url);
       const data = await res.json();
       console.log(data);
-      setCart(data);
+      setCart(data.data);
+      setThumbnail(data.meta.thumbnail);
+      setDuration(data.meta.duration);
     } catch (error) {
       setError(error);
-      console.log(error);
+      console.log(error, "error mil gya");
+      toast("Please Paste youtube video link  !", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
     }
   };
 
   const download_video = async (itag, filename) => {
     try {
-      const url = "http://127.0.0.1:8000/download_video";
+      const url = `${server_url}/download_video`;
       const res = await fetch(url, {
         method: "post",
         headers: {
@@ -36,8 +55,18 @@ export function Component() {
         }),
       });
       const blob = await res.blob();
-
+      toast("Please wait your video is downloading  !", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
       // Use the blob to create a link and simulate a click to download
+
       const download_url = window.URL.createObjectURL(blob);
       const download_link = document.createElement("a");
       download_link.href = download_url;
@@ -47,7 +76,17 @@ export function Component() {
       document.body.removeChild(download_link);
     } catch (error) {
       setError(error);
-      console.log(error)
+      console.log(error, "error mil gya");
+      toast("Please Paste youtube video link  !", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
     }
   };
 
@@ -55,6 +94,7 @@ export function Component() {
     <>
       <div className="m-5 mt-9  flex flex-col justify-center content-center ">
         <div className="flex justify-center ">
+          <ToastContainer />
           <h1 className="text-center mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white font-serif ">
             Youtube Video Downloader
           </h1>
@@ -91,17 +131,24 @@ export function Component() {
           </form>
         </div>
 
-        <div className="flex justify-center text-white ">eror </div>
-        <div className="flex justify-center gap-14">
+        <div className="flex justify-center gap-14 mt-5">
           {/* Thumbnails */}
-          <div className="flex justify-center flex-col text-center border h-24 w-55">
-            <img src="" alt="Thumbnail" />
-            <p>5454</p>
-          </div>
+          {Thumbnail && (
+            <div>
+              <img
+                src={`${Thumbnail}`}
+                alt="Thumbnail"
+                className="flex justify-center flex-col text-center h-44 w-55"
+              />
+              <p className="flex justify-center  text-center mt-2 ">
+                {duration}{" "}
+              </p>
+            </div>
+          )}
 
           {/* Download buttons */}
           <div className=" h-24 w-55">
-            {cards.map((d, i) => (
+            {cards?.map((d, i) => (
               <div className="flex justify-center flex-col " key={i}>
                 <button
                   type="button"
