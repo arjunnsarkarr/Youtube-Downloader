@@ -11,6 +11,8 @@ async def get_available_streams(url) -> Dict:
     yt = YouTube(url)
     streams: List = yt.streams.filter(file_extension="mp4")
     video_length = yt.length
+    if (video_length / 60) > 10:
+        return {"message": "unable to download because video is longer than 10 min"}
     response = {}
     response["meta"] = {
         "thumbnail": yt.thumbnail_url,
