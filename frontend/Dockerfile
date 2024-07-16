@@ -1,11 +1,11 @@
 
-# Start from a base image with Node.js installed
-FROM node:alpine AS builder
+# Use the official Node.js image as a base image
+FROM node:14-alpine
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json (or yarn.lock)
 COPY package*.json ./
 
 # Install dependencies
@@ -15,25 +15,11 @@ RUN npm install
 COPY . .
 
 # Build the Next.js application
-#RUN npm run build
+RUN npm run build
 
-# Start image, copy built files and set up the production environment
-FROM node:alpine AS runner
-
-WORKDIR /app
-
-# Copy the built files from the builder stage
-COPY --from=builder /app/next.config.mjs ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-
-# Set environment variables
-#ENV NODE_ENV production
-
-# Expose port 3000
+# Expose the port the app runs on
 EXPOSE 3000
 
-# Start the Next.js application
-CMD ["npm", "run", "dev"]
+# Start the application
+CMD ["npm", "start"]
 
