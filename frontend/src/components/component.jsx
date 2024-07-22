@@ -16,7 +16,7 @@ export function Component() {
     try {
       let video_link = e.target.elements.name.value;
       setLink(video_link);
-      const url = `${server_url}/get_formated/`;
+      const url = `${server_url}/get_formated`;
 
       const res = await fetch(url, {
         method: "POST",
