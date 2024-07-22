@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Path
 from fastapi.responses import StreamingResponse
 from video_downloader.downloader import get_available_streams, download_video
-from api.models import Video
+from api.models import Link, Video
 import aiofiles
 
 router = APIRouter()
 
 
-@router.get("/get_formated/{video_link:path}")
-async def get_video_formates(video_link: str = Path(..., title="YouTube video link")):
+@router.post("/get_formated")
+async def get_video_formates(video_link: Link):
     print(video_link)
-    res = await get_available_streams(video_link)
+    res = await get_available_streams(video_link.url)
     return res
 
 

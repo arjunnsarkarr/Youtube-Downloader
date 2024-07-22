@@ -16,9 +16,13 @@ export function Component() {
     try {
       let video_link = e.target.elements.name.value;
       setLink(video_link);
-      const url = `${server_url}/get_formated/${video_link}`;
+      const url = `${server_url}/get_formated/`;
 
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: video_link }),
+      });
       const data = await res.json();
       console.log(data);
       setCart(data.data);
@@ -43,6 +47,17 @@ export function Component() {
   const download_video = async (itag, filename) => {
     try {
       const url = `${server_url}/download_video`;
+      toast("Please wait your video is downloading  !", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+
       const res = await fetch(url, {
         method: "post",
         headers: {
@@ -55,16 +70,6 @@ export function Component() {
         }),
       });
       const blob = await res.blob();
-      toast("Please wait your video is downloading  !", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-      });
       // Use the blob to create a link and simulate a click to download
 
       const download_url = window.URL.createObjectURL(blob);
