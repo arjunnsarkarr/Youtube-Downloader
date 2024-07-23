@@ -1,21 +1,25 @@
-FROM node:latest as build
+
+# Use the official Node.js image as a base image
+FROM node:alpine
+
+# Set the working directory
 WORKDIR /app
-ENV PATH /app/node_modules/.bin:$PATH
-ENV NEXT_PUBLIC_STANDALONE=true
 
-COPY package.json ./
-COPY package-lock.json ./
+# Copy package.json and package-lock.json (or yarn.lock)
+COPY package*.json ./
 
-RUN npm ci --silent
-RUN npm install -g --silent
-# add app
-COPY . /app/
+# Install dependencies
+RUN npm install
 
+# Copy the rest of the application code
+COPY . .
 
-
-# Build production
+# Build the Next.js application
 RUN npm run build
-RUN npm install -g serve
 
-## Start the app on port 3000
-CMD serve -s build -l 3000
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Start the application
+CMD ["npm", "start"]
+

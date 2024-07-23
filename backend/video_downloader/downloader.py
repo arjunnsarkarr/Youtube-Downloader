@@ -2,6 +2,14 @@ import os
 from typing import Dict, List
 from pytube import YouTube
 from pathlib import Path
+from pytube.innertube import _default_clients
+
+_default_clients["ANDROID"]["context"]["client"]["clientVersion"] = "19.08.35"
+_default_clients["IOS"]["context"]["client"]["clientVersion"] = "19.08.35"
+_default_clients["ANDROID_EMBED"]["context"]["client"]["clientVersion"] = "19.08.35"
+_default_clients["IOS_EMBED"]["context"]["client"]["clientVersion"] = "19.08.35"
+_default_clients["IOS_MUSIC"]["context"]["client"]["clientVersion"] = "6.41"
+_default_clients["ANDROID_MUSIC"] = _default_clients["ANDROID_CREATOR"]
 
 VIDEO_PATH = Path(".").absolute() / "videos"
 VIDEO_PATH.mkdir(exist_ok=True)
@@ -11,6 +19,8 @@ async def get_available_streams(url) -> Dict:
     yt = YouTube(url)
     streams: List = yt.streams.filter(file_extension="mp4")
     video_length = yt.length
+    if (video_length / 60) > 10:
+        return {"message": "unable to download because video is longer than 10 min"}
     response = {}
     response["meta"] = {
         "thumbnail": yt.thumbnail_url,
