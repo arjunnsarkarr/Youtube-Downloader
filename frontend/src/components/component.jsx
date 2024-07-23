@@ -12,6 +12,8 @@ export function Component() {
   const [duration, setDuration] = useState("");
   const [spinner, setSpinner] = useState(false);
   const [btn, setbtn] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [loader, setLoader] = useState(false);
 
   const submit_hander = async (e) => {
     e.preventDefault();
@@ -36,6 +38,9 @@ export function Component() {
     } catch (error) {
       setError(error);
       console.log(error, "error mil gya");
+      setbtn(true);
+      setSpinner(false);
+      e.target.elements.name.value = "";
       toast("Please Paste youtube video link  !", {
         position: "top-center",
         autoClose: 5000,
@@ -62,8 +67,8 @@ export function Component() {
         progress: undefined,
         theme: "dark",
       });
-
-      const res = await fetch(url, {
+      setLoader(true);
+      const response = await fetch(url, {
         method: "post",
         headers: {
           "Content-Type": "application/json",
@@ -74,7 +79,39 @@ export function Component() {
           itag: itag,
         }),
       });
-      const blob = await res.blob();
+      console.log(response.headers);
+      // progress bar
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const reader = response.body.getReader();
+      const chunks = [];
+      let loaded = 0;
+      const updateProgress = () => {
+        setProgress((prevProgress) => {
+          if (prevProgress < 90) {
+            return prevProgress + 1;
+          }
+          return prevProgress;
+        });
+      };
+
+      const progressInterval = setInterval(updateProgress, 100); // Update progress every 100ms
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+      }
+
+      clearInterval(progressInterval); // Stop the interval when download is complete
+      setProgress(100); // Set progress to 100% when done
+
+      const blob = new Blob(chunks);
+
+      // progress bar ends
+      // const blob = await res.blob();
       // Use the blob to create a link and simulate a click to download
 
       const download_url = window.URL.createObjectURL(blob);
@@ -165,62 +202,84 @@ export function Component() {
           </div>
         )}
 
-        <div className="flex justify-center gap-14 mt-5">
-          {/* Thumbnails */}
-          {Thumbnail && (
-            <div>
-              <img
-                src={`${Thumbnail}`}
-                alt="Thumbnail"
-                className="flex justify-center flex-col text-center h-44 w-55 "
+        {loader ? (
+          <div>
+            <div
+              style={{
+                width: "100%",
+                backgroundColor: "#e0e0df",
+                borderRadius: "5px",
+                marginTop: "12px",
+              }}
+            >
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: "24px",
+                  backgroundColor: progress === 100 ? "green" : "blue",
+                  borderRadius: "5px",
+                  transition: "width 0.2s",
+                }}
               />
-              <p className="flex justify-center  text-center mt-2 ">
-                {duration}{" "}
-              </p>
             </div>
-          )}
-
-          {/* Download buttons */}
-          <div className="w-auto">
-            {cards?.map((d, i) => (
-              <div className="flex justify-center flex-col " key={i}>
-                {d.type == "video" && (
-                  <div>
-                    {d.is_progressive && (
-                      <div>
-                        <p>
-                         Video - {d.resolution} - {d.size}Mb
-                        </p>
-                        <button
-                          type="button"
-                          className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 md:shrink-0"
-                          onClick={() => download_video(d.key, d.file_name)}
-                        >
-                          download
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {d.type == "audio" && (
-                  <div>
-                    <p>
-                      Audio - {d.size} Mb
-                    </p>
-
-                    <button
-                      type="button"
-                      className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 md:shrink-0"
-                      onClick={() => download_video(d.key, d.file_name)}
-                    >
-                      download
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+            <p className="flex justify-center mt-2">{progress}%</p>
           </div>
-        </div>
+        ) : (
+          <div className="flex justify-center gap-14 mt-5">
+            {/* Thumbnails */}
+            {Thumbnail && (
+              <div>
+                <img
+                  src={`${Thumbnail}`}
+                  alt="Thumbnail"
+                  className="flex justify-center flex-col text-center h-44 w-55 "
+                />
+                <p className="flex justify-center  text-center mt-2 ">
+                  {duration}{" "}
+                </p>
+              </div>
+            )}
+
+            {/* Download buttons */}
+            <div className="w-auto">
+              {cards?.map((d, i) => (
+                <div className="flex justify-center flex-col " key={i}>
+                  {d.type == "video" && (
+                    <div>
+                      {d.is_progressive && (
+                        <div>
+                          <p>
+                            Video - {d.resolution} - {d.size}Mb
+                          </p>
+                          <button
+                            type="button"
+                            className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 md:shrink-0"
+                            onClick={() => download_video(d.key, d.file_name)}
+                          >
+                            download
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {d.type == "audio" && (
+                    <div>
+                      <p>Audio - {d.size} Mb</p>
+
+                      <button
+                        type="button"
+                        className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 md:shrink-0"
+                        onClick={() => download_video(d.key, d.file_name)}
+                      >
+                        download
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
