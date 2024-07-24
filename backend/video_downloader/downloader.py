@@ -1,4 +1,4 @@
-import os
+import os, re
 from typing import Dict, List
 from pytube import YouTube
 from pathlib import Path
@@ -38,6 +38,12 @@ async def get_available_streams(url) -> Dict:
     return response
 
 
+def sanitize_filename(filename):
+    # Remove or replace non-ASCII characters
+    sanitized_filename = re.sub(r"[^\x00-\x7F]+", "_", filename)
+    return sanitized_filename
+
+
 async def download_video(url, itag):
     yt = YouTube(url)
     stream = yt.streams.get_by_itag(itag)
@@ -46,9 +52,13 @@ async def download_video(url, itag):
 
         file_name = VIDEO_PATH / stream.default_filename
 
+        senitized_filename = VIDEO_PATH / sanitize_filename(stream.default_filename)
+        os.rename(file_name, senitized_filename)
+
         if stream.type == "audio":
-            old_name = file_name
-            file_name = VIDEO_PATH / f"{stream.title}.mp3"
+            old_name = senitized_filename
+            title = sanitize_filename(stream.title)
+            file_name = VIDEO_PATH / f"{title}.mp3"
             os.rename(old_name, file_name)
-        return file_name
+        return senitized_filename
     return None
