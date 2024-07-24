@@ -58,7 +58,7 @@ async def download_video(url, itag):
         if stream.type == "audio":
             old_name = senitized_filename
             title = sanitize_filename(stream.title)
-            file_name = VIDEO_PATH / f"{title}.mp3"
-            os.rename(old_name, file_name)
+            senitized_filename = VIDEO_PATH / f"{title}.mp3"
+            os.rename(old_name, senitized_filename)
         return senitized_filename
     return None
