@@ -1,15 +1,7 @@
-import os
+import os, re
 from typing import Dict, List
 from pytube import YouTube
 from pathlib import Path
-from pytube.innertube import _default_clients
-
-_default_clients["ANDROID"]["context"]["client"]["clientVersion"] = "19.08.35"
-_default_clients["IOS"]["context"]["client"]["clientVersion"] = "19.08.35"
-_default_clients["ANDROID_EMBED"]["context"]["client"]["clientVersion"] = "19.08.35"
-_default_clients["IOS_EMBED"]["context"]["client"]["clientVersion"] = "19.08.35"
-_default_clients["IOS_MUSIC"]["context"]["client"]["clientVersion"] = "6.41"
-_default_clients["ANDROID_MUSIC"] = _default_clients["ANDROID_CREATOR"]
 
 VIDEO_PATH = Path(".").absolute() / "videos"
 VIDEO_PATH.mkdir(exist_ok=True)
@@ -38,11 +30,18 @@ async def get_available_streams(url) -> Dict:
             file_name = stream.default_filename.split(".")[0]
             file_name = f"{file_name}.mp3"
             res["file_name"] = file_name
+            res["resolution"] = stream.abr
         else:
             res["file_name"] = stream.default_filename
         res_list.append(res)
     response["data"] = res_list
     return response
+
+
+def sanitize_filename(filename):
+    # Remove or replace non-ASCII characters
+    sanitized_filename = re.sub(r"[^\x00-\x7F]+", "_", filename)
+    return sanitized_filename
 
 
 async def download_video(url, itag):
@@ -53,9 +52,13 @@ async def download_video(url, itag):
 
         file_name = VIDEO_PATH / stream.default_filename
 
+        senitized_filename = VIDEO_PATH / sanitize_filename(stream.default_filename)
+        os.rename(file_name, senitized_filename)
+
         if stream.type == "audio":
-            old_name = file_name
-            file_name = VIDEO_PATH / f"{stream.title}.mp3"
-            os.rename(old_name, file_name)
-        return file_name
+            old_name = senitized_filename
+            title = sanitize_filename(stream.title)
+            senitized_filename = VIDEO_PATH / f"{title}.mp3"
+            os.rename(old_name, senitized_filename)
+        return senitized_filename
     return None
