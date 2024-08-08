@@ -1,8 +1,13 @@
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, BackgroundTasks, Path
 from fastapi.responses import StreamingResponse
-from video_downloader.downloader import get_available_streams, download_video
-from api.models import Link, Video
-import aiofiles
+from video_downloader.downloader import (
+    VIDEO_PATH,
+    get_available_streams,
+    download_video,
+    stream_video,
+    file_iterator,
+)
+from api.models import Link, Video, FileName
 
 router = APIRouter()
 
@@ -15,22 +20,14 @@ async def get_video_formates(video_link: Link):
 
 
 @router.post("/download_video")
-async def download(video: Video):
-    print(video)
-    file_path = await download_video(video.url, video.itag)
+async def download(video: Video, background_task: BackgroundTasks):
+    background_task.add_task(download_video, video.url, video.itag)
 
-    if file_path:
-        filename = file_path.name
-        print(file_path.exists())
+    return {"message": "Download started"}
 
-        async def file_iterator(file_path):
-            async with aiofiles.open(file_path, "rb") as file:
-                while chunk := await file.read(1024):  # Read in chunks of 1024 bytes
-                    yield chunk
 
-        return StreamingResponse(
-            file_iterator(file_path),
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
-        )
-    return {"Not able to download"}
+@router.post("/stream")
+async def stream(file_name: FileName):
+    file_path = VIDEO_PATH / file_name.filename
+
+    return await stream_video(file_path)
