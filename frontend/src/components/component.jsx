@@ -54,20 +54,11 @@ export function Component() {
     }
   };
 
-  const download_video = async (itag, filename) => {
+  const download_video = async (file_name) => {
     try {
-      const url = `${server_url}/download_video`;
-      toast("Please wait your video is downloading  !", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-      });
+      const url = `${server_url}/stream`;
       setLoader(true);
+
       const response = await fetch(url, {
         method: "post",
         headers: {
@@ -75,15 +66,10 @@ export function Component() {
           Accept: "application/octet-stream",
         },
         body: JSON.stringify({
-          url: link,
-          itag: itag,
+          filename: file_name,
         }),
       });
-      console.log(response.headers);
-      // progress bar
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+
       const reader = response.body.getReader();
       const chunks = [];
       let loaded = 0;
@@ -117,10 +103,45 @@ export function Component() {
       const download_url = window.URL.createObjectURL(blob);
       const download_link = document.createElement("a");
       download_link.href = download_url;
-      download_link.download = filename || "video.mp3"; // or any other extension
+      download_link.download = file_name || "video.mp3"; // or any other extension
       document.body.appendChild(download_link);
       download_link.click();
       document.body.removeChild(download_link);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const start_download = async (itag, filename) => {
+    try {
+      const url = `${server_url}/download_video`;
+      toast("Please wait your video is downloading  !", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      const response = await fetch(url, {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          url: link,
+          itag: itag,
+        }),
+      });
+      console.log(response.headers);
+      // progress bar
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      await download_video(filename);
     } catch (error) {
       setError(error);
       console.log(error, "error mil gya");
@@ -246,30 +267,31 @@ export function Component() {
                 <div className="flex justify-center flex-col " key={i}>
                   {d.type == "video" && (
                     <div>
-                      {d.is_progressive && (
+                      {
                         <div>
-                          <p>
-                            Video - {d.resolution} - {d.size}Mb
-                          </p>
+                          <p>Video - {d.resolution}</p>
                           <button
                             type="button"
                             className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 md:shrink-0"
-                            onClick={() => download_video(d.key, d.file_name)}
+                            onClick={() => start_download(d.key, d.file_name)}
                           >
                             download
                           </button>
                         </div>
-                      )}
+                      }
                     </div>
                   )}
                   {d.type == "audio" && (
                     <div>
-                      <p>Audio - {d.size} Mb</p>
+                      <p>
+                        Audio - {Math.round(d.resolution) ? d.resolution : 0}{" "}
+                        Kbps{" "}
+                      </p>
 
                       <button
                         type="button"
                         className="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 md:shrink-0"
-                        onClick={() => download_video(d.key, d.file_name)}
+                        onClick={() => start_download(d.key, d.file_name)}
                       >
                         download
                       </button>
