@@ -8,3 +8,7 @@ class Video(BaseModel):
 
 class Link(BaseModel):
     url: str
+
+
+class FileName(BaseModel):
+    filename: str
